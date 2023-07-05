@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         steam市场 汇率自动转换
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.1.3
 // @description  steam市场 汇率自动转换, 大部分代码用gpt生成的, 能跑就行
 // @author       bestcondition.cn
 // @match        https://steamcommunity.com/market/listings/*
@@ -10,39 +10,60 @@
 // @license      Apache-2.0
 // ==/UserScript==
 let ekv = {};
-let steam_rate = 0.85;
 let current_key_str = '';
 let cny_str = 'CNY¥'
+let input = document.createElement('input');
+let div = document.createElement('div');
+
+function add_cal_input() {
+    // 创建一个浮动的文本输入框
+    input.type = 'text';
+    input.placeholder = '请输入';
+
+    // 从 localStorage 中读取初始值
+    const storedValue = localStorage.getItem('myInputValue');
+    input.value = storedValue || 'x * 0.85';
+
+    // 监听文本框值的改变，并将其持久化到 localStorage 中
+    input.addEventListener('input', () => {
+        localStorage.setItem('myInputValue', input.value);
+    });
+    let p = document.createElement('p');
+    p.innerText = '手续费后价格计算公式, 其中x为原价';
+    div.appendChild(p);
+    // 将文本框添加到页面中
+    div.appendChild(input);
+}
+
 function on_change() {
     let market_buyorder_info_details_tablecontainer = document.querySelector("#market_buyorder_info_details_tablecontainer")
-    if (market_buyorder_info_details_tablecontainer){
+    if (market_buyorder_info_details_tablecontainer) {
         market_buyorder_info_details_tablecontainer.style.width = 'auto';
     }
     let td_list = document.querySelectorAll("#market_commodity_buyreqeusts_table > table > tbody > tr > td:nth-child(odd)")
-    td_list.forEach(
-        (td) => {
-            let o_text = td.innerText
-            if(!current_key_str){
-                for(let a in ekv){
-                    if(o_text.includes(a)){
-                        current_key_str = a;
-                        break;
-                    }
-                }
-            }
-            if (o_text.includes(current_key_str) && !o_text.includes(cny_str)) {
-                let currency_rate = ekv[current_key_str];
-                if (currency_rate) {
-                    let ars_money = extractNumber(o_text)
-                    let cn_money = ars_money / currency_rate
-                    let post_cn_money = cn_money * steam_rate;
-                    let cn_money_str = cn_money.toFixed(2)
-                    let post_cn_money_str = post_cn_money.toFixed(2)
-                    td.innerText = `${o_text} ( ${cny_str} ${cn_money_str} | ${post_cn_money_str} )`
+    td_list.forEach((td) => {
+        let o_text = td.innerText
+        if (!current_key_str) {
+            for (let a in ekv) {
+                if (o_text.includes(a)) {
+                    current_key_str = a;
+                    break;
                 }
             }
         }
-    )
+        if (o_text.includes(current_key_str) && !o_text.includes(cny_str)) {
+            let currency_rate = ekv[current_key_str];
+            if (currency_rate && input.value) {
+                let ars_money = extractNumber(o_text)
+                let cn_money = ars_money / currency_rate
+                let x = cn_money
+                let post_cn_money = eval(input.value)
+                let cn_money_str = cn_money.toFixed(2)
+                let post_cn_money_str = post_cn_money.toFixed(2)
+                td.innerText = `${o_text} ( ${cny_str} ${cn_money_str} | ${post_cn_money_str} )`
+            }
+        }
+    })
 }
 
 function add_table() {
@@ -125,7 +146,6 @@ function add_table() {
     table.appendChild(tbody);
 
     // 将表格添加到页面中
-    let div = document.createElement('div');
     div.id = 'exchange-rates';
     div.style.position = 'fixed';
     div.style.top = '0';
@@ -234,6 +254,7 @@ function add_table() {
         // 修改也要即时改变
         on_change();
     }
+    add_cal_input();
 }
 
 function extractNumber(str) {
