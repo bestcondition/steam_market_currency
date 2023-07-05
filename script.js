@@ -1,17 +1,22 @@
 // ==UserScript==
 // @name         steam市场 汇率自动转换
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  steam市场 汇率自动转换
+// @version      0.1.1
+// @description  steam市场 汇率自动转换, 大部分代码用gpt生成的, 能跑就行
 // @author       bestcondition.cn
 // @match        https://steamcommunity.com/market/listings/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=steamcommunity.com
 // @grant        none
+// @license      Apache-2.0
 // ==/UserScript==
 let ekv = {};
 let steam_rate = 0.85;
 
 function on_change() {
+    let market_buyorder_info_details_tablecontainer = document.querySelector("#market_buyorder_info_details_tablecontainer")
+    if (market_buyorder_info_details_tablecontainer){
+        market_buyorder_info_details_tablecontainer.style.width = 'auto';
+    }
     let td_list = document.querySelectorAll("#market_commodity_buyreqeusts_table > table > tbody > tr > td:nth-child(odd)")
     td_list.forEach(
         (td) => {
