@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         steam市场 汇率自动转换
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.1.2
 // @description  steam市场 汇率自动转换, 大部分代码用gpt生成的, 能跑就行
 // @author       bestcondition.cn
 // @match        https://steamcommunity.com/market/listings/*
@@ -11,7 +11,8 @@
 // ==/UserScript==
 let ekv = {};
 let steam_rate = 0.85;
-
+let current_key_str = '';
+let cny_str = 'CNY¥'
 function on_change() {
     let market_buyorder_info_details_tablecontainer = document.querySelector("#market_buyorder_info_details_tablecontainer")
     if (market_buyorder_info_details_tablecontainer){
@@ -21,12 +22,16 @@ function on_change() {
     td_list.forEach(
         (td) => {
             let o_text = td.innerText
-            let cny_str = 'CNY¥'
-            let currencyRegex = /[A-Z]{3}/; // 匹配三个大写字母，即货币代码
-            let currency = o_text.match(currencyRegex); // 通过 match 方法获取匹配到的第一个字符串
-            if (!o_text.includes(cny_str) && currency) {
-                let currency_str = currency[0];
-                let currency_rate = ekv[currency_str];
+            if(!current_key_str){
+                for(let a in ekv){
+                    if(o_text.includes(a)){
+                        current_key_str = a;
+                        break;
+                    }
+                }
+            }
+            if (o_text.includes(current_key_str) && !o_text.includes(cny_str)) {
+                let currency_rate = ekv[current_key_str];
                 if (currency_rate) {
                     let ars_money = extractNumber(o_text)
                     let cn_money = ars_money / currency_rate
